@@ -1,6 +1,6 @@
 [package]
 name = "doubao-desktop"
-version = "1.0.1"
+version = "1.0.2"
 description = "Doubao AI Assistant - Tauri-based desktop wrapper (ByteDance)"
 authors = ["gonwe <gonwex@gmail.com>"]
 edition = "2021"

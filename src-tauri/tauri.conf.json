@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/schemas/main/tauri/config.schema.json",
   "productName": "豆包",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "identifier": "com.doubao.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -10,18 +10,7 @@
     "beforeBuildCommand": ""
   },
   "app": {
-    "windows": [
-      {
-        "title": "豆包",
-        "url": "https://www.doubao.com/chat/",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 600,
-        "minHeight": 400,
-        "resizable": true,
-        "fullscreen": false
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }
