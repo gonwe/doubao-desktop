@@ -5,36 +5,17 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 const INIT_SCRIPT: &str = r#"
 (function() {
-    'use strict';
-
-    function hideDownloadPrompts() {
-        // Hide elements whose text content is exactly "下载豆包电脑版"
-        for (const el of document.querySelectorAll('button, div')) {
-            const text = (el.textContent || '').trim();
-            if (text === '下载豆包电脑版' || text === '下载电脑版') {
-                // Walk up to find the container and hide it
-                let p = el;
-                for (let i = 0; i < 6 && p && p !== document.body; i++) {
-                    p.style.display = 'none';
-                    // Also try to remove if it's the outermost container
-                    if (p.className && typeof p.className === 'string' &&
-                        p.className.includes('container-')) {
-                        p.remove();
-                        break;
-                    }
-                    p = p.parentElement;
-                }
+    function hide() {
+        var btns = document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+            if (btns[i].textContent.trim() === '下载豆包电脑版') {
+                btns[i].style.display = 'none';
+                clearInterval(tid);
+                return;
             }
         }
     }
-
-    if (document.body) hideDownloadPrompts();
-
-    // Watch for dynamic DOM changes
-    const observer = new MutationObserver(hideDownloadPrompts);
-    observer.observe(document.documentElement, {
-        childList: true, subtree: true
-    });
+    var tid = setInterval(hide, 1000);
 })();
 "#;
 
