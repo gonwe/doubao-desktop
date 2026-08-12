@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/schemas/main/tauri/config.schema.json",
   "productName": "豆包",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "identifier": "com.doubao.desktop",
   "build": {
     "frontendDist": "../dist",
