@@ -7,8 +7,9 @@ const INIT_SCRIPT: &str = r#"
 (function() {
     // CJK font rendering tweaks for WebKitGTK
     var s = document.createElement('style');
-    s.textContent = '*{font-family:"PingFang SC","Noto Sans CJK SC",'
-        +'"Source Han Sans CN","Microsoft YaHei","WenQuanYi Micro Hei",'
+    s.textContent = '*{font-family:"Douyin Sans","抖音美好体",'
+        +'"PingFang SC","Noto Sans CJK SC","Source Han Sans CN",'
+        +'"Microsoft YaHei","WenQuanYi Micro Hei",'
         +'sans-serif!important;-webkit-font-smoothing:antialiased!important}';
     document.head.appendChild(s);
 
