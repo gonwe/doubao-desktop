@@ -7,5 +7,5 @@
   "remote": {
     "urls": ["https://www.doubao.com/*"]
   },
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "allow-get-clipboard-image"]
 }
