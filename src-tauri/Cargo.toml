@@ -1,7 +1,7 @@
 [package]
 name = "doubao-desktop"
-version = "1.0.7"
-description = "Doubao AI Assistant - Tauri-based desktop wrapper (ByteDance)"
+version = "1.1.0"
+description = "Unofficial Doubao desktop wrapper for Linux, built with Tauri"
 authors = ["gonwe <gonwex@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -14,6 +14,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+arboard = "3"
+base64 = "0.22"
 
 [profile.release]
 panic = "abort"

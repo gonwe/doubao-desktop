@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Allows the doubao web page to read the native clipboard image for paste support.",
+  "windows": ["main"],
+  "local": false,
+  "remote": {
+    "urls": ["https://www.doubao.com/*"]
+  },
+  "permissions": ["core:default"]
+}

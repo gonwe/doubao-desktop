@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Allows the doubao web page to read the native clipboard image for paste support.","remote":{"urls":["https://www.doubao.com/*"]},"local":false,"windows":["main"],"permissions":["core:default"]}}
