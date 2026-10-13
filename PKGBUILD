@@ -15,7 +15,7 @@ conflicts=('doubao-desktop')
 _dlname="doubao-desktop-${pkgver}-x86_64.tar.gz"
 source=("${_dlname}::https://github.com/gonwe/doubao-desktop/releases/download/v${pkgver}/${_dlname}"
         "${pkgname}.desktop")
-sha256sums=('36157f8fae05a1aec85a27a47463a5068f563bb356ceba163ddad60aa454b6b2'
+sha256sums=('cacd3aa7b18f1f7140ef5194c2e983a59e7cd16cdcdb1717fbea6eeee91304bf'
             'SKIP')
 
 package() {

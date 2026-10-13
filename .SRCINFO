@@ -18,7 +18,7 @@ pkgbase = doubao-desktop-bin
 	conflicts = doubao-desktop
 	source = doubao-desktop-1.2.0-x86_64.tar.gz::https://github.com/gonwe/doubao-desktop/releases/download/v1.2.0/doubao-desktop-1.2.0-x86_64.tar.gz
 	source = doubao-desktop-bin.desktop
-	sha256sums = 36157f8fae05a1aec85a27a47463a5068f563bb356ceba163ddad60aa454b6b2
+	sha256sums = cacd3aa7b18f1f7140ef5194c2e983a59e7cd16cdcdb1717fbea6eeee91304bf
 	sha256sums = SKIP
 
 pkgname = doubao-desktop-bin
