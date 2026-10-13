@@ -1,0 +1,227 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  PKG_NAME: doubao-desktop-bin
+
+jobs:
+  validate:
+    name: Validate tag and versions
+    runs-on: ubuntu-latest
+    outputs:
+      pkgver: ${{ steps.version.outputs.pkgver }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read and cross-check versions
+        id: version
+        run: |
+          set -euo pipefail
+          pkgver="$(sed -n 's/^pkgver=//p' PKGBUILD)"
+          conf_ver="$(sed -n 's/^[[:space:]]*"version":[[:space:]]*"\([^"]*\)".*/\1/p' src-tauri/tauri.conf.json)"
+          cargo_ver="$(sed -n 's/^version = "\([^"]*\)"/\1/p' src-tauri/Cargo.toml)"
+
+          expected_tag="v${pkgver}"
+          if [ "${GITHUB_REF_NAME}" != "${expected_tag}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match PKGBUILD pkgver (expected ${expected_tag})"
+            exit 1
+          fi
+          if [ "$conf_ver" != "$pkgver" ]; then
+            echo "::error::tauri.conf.json version ${conf_ver} != PKGBUILD pkgver ${pkgver}"
+            exit 1
+          fi
+          if [ "$cargo_ver" != "$pkgver" ]; then
+            echo "::error::Cargo.toml version ${cargo_ver} != PKGBUILD pkgver ${pkgver}"
+            exit 1
+          fi
+
+          echo "pkgver=${pkgver}" >> "$GITHUB_OUTPUT"
+          echo "all three manifests agree on ${pkgver}"
+
+  build:
+    name: Build release bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: validate
+    container:
+      image: archlinux:base-devel
+    outputs:
+      artifact_name: ${{ steps.package.outputs.artifact_name }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Arch toolchain
+        run: |
+          pacman -Syu --noconfirm archlinux-keyring gnupg
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -S --noconfirm --needed \
+            git sudo rustup webkit2gtk-4.1 gtk3 glib2 libsoup3 \
+            cairo pango gdk-pixbuf2 alsa-lib libxdo openssl \
+            patchelf desktop-file-utils hicolor-icon-theme
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Build with cargo
+        run: |
+          set -euo pipefail
+          cargo build --manifest-path src-tauri/Cargo.toml --release
+          test -x src-tauri/target/release/doubao-desktop
+
+      - name: Assemble release tarball
+        id: package
+        run: |
+          set -euo pipefail
+          pkgver="${{ needs.validate.outputs.pkgver }}"
+          staging="doubao-desktop-${pkgver}-x86_64"
+          rm -rf "$staging"
+          mkdir -p "$staging"
+
+          install -Dm755 src-tauri/target/release/doubao-desktop \
+            "$staging/doubao-desktop.bin"
+          install -Dm755 doubao-desktop.sh \
+            "$staging/doubao-desktop"
+          for size in 48 64 128 256; do
+            install -Dm644 "icons-pkg/${size}x${size}/doubao-desktop.png" \
+              "$staging/${size}x${size}/doubao-desktop.png"
+          done
+
+          tar czf "${staging}.tar.gz" "$staging"
+          sha256="$(sha256sum "${staging}.tar.gz" | cut -d' ' -f1)"
+
+          echo "artifact_name=${staging}.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha256}" >> "$GITHUB_OUTPUT"
+          echo "built ${staging}.tar.gz (${sha256})"
+
+      - name: Upload release tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tarball
+          path: 'doubao-desktop-*-x86_64.tar.gz'
+          retention-days: 7
+
+  github-release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+    steps:
+      - name: Checkout release files
+        uses: actions/checkout@v4
+
+      - name: Download release tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: release-tarball
+          path: dist
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            LICENSE
+            README.md
+
+  aur:
+    name: Sync to AUR
+    runs-on: ubuntu-latest
+    needs: [validate, build, github-release]
+    if: ${{ github.event.repository.fork == false }}
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Arch toolchain
+        run: |
+          pacman -Syu --noconfirm archlinux-keyring gnupg
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -S --noconfirm --needed git sudo
+
+      - name: Patch checksum and regenerate .SRCINFO
+        env:
+          PKGVER: ${{ needs.validate.outputs.pkgver }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          sed -i "s|^sha256sums=('[0-9a-f]*'$|sha256sums=('${SHA256}'|" PKGBUILD
+          grep -q "${SHA256}" PKGBUILD || { echo "::error::failed to patch sha256"; exit 1; }
+
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          sudo -u builder env HOME=/home/builder makepkg --printsrcinfo > .SRCINFO
+          grep -q "pkgver = ${PKGVER}" .SRCINFO
+          grep -q "sha256sums = ${SHA256}" .SRCINFO
+
+      - name: Check for AUR SSH key
+        id: aur_key
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          if [ -n "$AUR_SSH_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::AUR_SSH_KEY is not configured; AUR sync will be skipped"
+          fi
+
+      - name: Import AUR SSH key
+        if: steps.aur_key.outputs.available == 'true'
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -d -m700 /home/builder/.ssh
+          install -Dm600 /dev/null /home/builder/.ssh/id_aur
+          printf '%s\n' "$AUR_SSH_KEY" > /home/builder/.ssh/id_aur
+          chmod 600 /home/builder/.ssh/id_aur
+          ssh-keyscan -H aur.archlinux.org > /home/builder/.ssh/known_hosts
+          chmod 600 /home/builder/.ssh/known_hosts
+          cat > /home/builder/.ssh/config <<'EOF'
+          Host aur.archlinux.org
+            HostName aur.archlinux.org
+            User aur
+            IdentityFile ~/.ssh/id_aur
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+          chmod 600 /home/builder/.ssh/config
+          chown -R builder:builder /home/builder/.ssh
+
+      - name: Push PKGBUILD, .SRCINFO and desktop entry to AUR
+        if: steps.aur_key.outputs.available == 'true'
+        env:
+          PKGVER: ${{ needs.validate.outputs.pkgver }}
+        run: |
+          set -euo pipefail
+          sudo -u builder env HOME=/home/builder git clone --quiet \
+            "ssh://aur@aur.archlinux.org/${PKG_NAME}.git" aurpkg
+          sudo -u builder cp PKGBUILD .SRCINFO doubao-desktop-bin.desktop aurpkg/
+          cd aurpkg
+          sudo -u builder env HOME=/home/builder git add PKGBUILD .SRCINFO doubao-desktop-bin.desktop
+          sudo -u builder env HOME=/home/builder git -c user.name='github-actions[bot]' \
+              -c user.email='github-actions[bot]@users.noreply.github.com' \
+              commit -m "up to v${PKGVER}"
+          sudo -u builder env HOME=/home/builder git push origin master
+          echo "AUR ${PKG_NAME} updated to ${PKGVER}"
+
+      - name: Report skipped AUR sync
+        if: steps.aur_key.outputs.available != 'true'
+        run: echo "AUR package was not changed. Publish it manually or configure the AUR_SSH_KEY repository secret."

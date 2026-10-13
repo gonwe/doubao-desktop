@@ -1,0 +1,24 @@
+pkgbase = doubao-desktop-bin
+	pkgdesc = Unofficial Doubao desktop wrapper for Linux, built with Tauri
+	pkgver = 1.2.0
+	pkgrel = 1
+	url = https://github.com/gonwe/doubao-desktop
+	arch = x86_64
+	license = MIT
+	depends = webkit2gtk-4.1
+	depends = gtk3
+	depends = libsoup3
+	depends = glib2
+	depends = libgl
+	depends = hicolor-icon-theme
+	depends = xdg-utils
+	optdepends = noto-fonts-cjk: CJK system font
+	optdepends = adobe-source-han-sans-cn-fonts: CJK system font
+	provides = doubao-desktop=1.2.0
+	conflicts = doubao-desktop
+	source = doubao-desktop-1.2.0-x86_64.tar.gz::https://github.com/gonwe/doubao-desktop/releases/download/v1.2.0/doubao-desktop-1.2.0-x86_64.tar.gz
+	source = doubao-desktop-bin.desktop
+	sha256sums = 36157f8fae05a1aec85a27a47463a5068f563bb356ceba163ddad60aa454b6b2
+	sha256sums = SKIP
+
+pkgname = doubao-desktop-bin

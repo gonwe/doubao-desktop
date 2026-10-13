@@ -21,8 +21,45 @@
 - Tauri 原生桌面窗口
 - 直接访问豆包官方 Web 页面
 - Linux / WebKitGTK 中文字体显示优化
+- WebKitGTK 图片粘贴修复
+- 单实例运行：重复点击图标只聚焦已有窗口
+- 站内导航留在应用窗口，站外链接交给系统浏览器
 - 适合 Arch Linux / AUR 打包使用
 - 保持较小的本地程序体积
+
+## 配置
+
+全部配置通过环境变量覆盖，均为可选：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `DOUBAO_URL` | `https://www.doubao.com/chat/` | 启动时加载的地址 |
+| `DOUBAO_USER_AGENT` | 未设置（沿用 WebKit 原生 UA） | 覆盖 User-Agent |
+| `DOUBAO_HIDE_BUTTONS` | `下载豆包电脑版` | 需要隐藏的按钮文本，逗号分隔；设为空字符串则不隐藏 |
+| `DOUBAO_DEBUG` | 未设置 | 打印实际生效的配置到 stderr |
+
+关于 `DOUBAO_USER_AGENT`：默认**不做**伪装，因为改写 UA 会改变站点看到的环境指纹，可能触发异地登录风控。
+需要对比测试时可以显式指定，例如：
+
+```sh
+DOUBAO_DEBUG=1 \
+DOUBAO_USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' \
+  doubao-desktop
+```
+
+窗口脚本（`doubao-desktop`）设置的 `WEBKIT_DISABLE_COMPOSITING_MODE`、`FREETYPE_PROPERTIES`、
+`WEBKIT_FORCE_FONT_CONFIG` 同样只在未设置时才导出，不会覆盖用户已有的值。
+
+## 从源码构建
+
+```sh
+# 依赖：webkit2gtk-4.1 gtk3 libsoup3 rust
+cargo build --release --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
+```
+
+产物在 `src-tauri/target/release/doubao-desktop`。发布用的 tarball 由 CI 在打 tag 时自动组装，
+布局与 AUR 包期望的一致。
 
 ## Arch Linux
 
