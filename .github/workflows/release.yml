@@ -71,7 +71,7 @@ jobs:
           pacman-key --populate archlinux
           pacman -S --noconfirm --needed \
             git sudo rustup webkit2gtk-4.1 gtk3 glib2 libsoup3 \
-            cairo pango gdk-pixbuf2 alsa-lib libxdo openssl \
+            cairo pango gdk-pixbuf2 alsa-lib xdotool openssl \
             patchelf desktop-file-utils hicolor-icon-theme
           rustup toolchain install stable --profile minimal
           rustup default stable
